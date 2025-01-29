@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  survey:
+    image: jantman/python-wifi-survey-heatmap
+    container_name: survey
+    network_mode: "host"
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/pwd
+      - "$HOME/.Xauthority:/root/.Xauthority:ro"
+    working_dir: /pwd
+    environment:
+      - DISPLAY=${DISPLAY}
+    command: ["wifi-survey", "-b", "<BSSID>", "-i", "<INTERFACE>", "-s", "<IPERF SERVER>", "-p", "<FLOORPLAN PNG>", "-t", "<TITLE>"]
