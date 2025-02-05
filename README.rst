@@ -9,12 +9,17 @@ python-wifi-survey-heatmap
    :alt: Docker Hub Build Status
    :target: https://hub.docker.com/r/jantman/python-wifi-survey-heatmap
 
-A Python application for Linux machines to perform WiFi site surveys and present the results as a heatmap overlayed on a floorplan.
+A Python application for Linux machines to perform WiFi site surveys and present the results as a heatmap overlaid on a floorplan.
 
 This is rather rough "beta" code. The heatmap generation code is roughly based on
 `Beau Gunderson's MIT-licensed wifi-heatmap code <https://github.com/beaugunderson/wifi-heatmap>`_.
 
 Many thanks to `DL6ER <https://github.com/DL6ER>`__ who contributed a massive amount of improvements to this project.
+
+Project Status: Inactive
+------------------------
+
+The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.
 
 Operating System support
 ------------------------
@@ -32,8 +37,8 @@ Check out the **Running In Docker** steps below to get single-line commands that
 Creating a heatmap using the software consists of the following three essential steps:
 
 1. Start an `iperf3` server on any machine in your local network. This server is used for bandwidth measurements to be independent of your Internet connection. When omitting the `--server` option, this may be skipped, however, be aware that the performance heatmaps tpyically are the icing on the cake of your measurement and are very useful in determining the *real* performance of your WiFi.
-2. Use the `wifi-survey` tool to record a measurement. You can load a floorplan and click on your current location ot record signal strength and determine the achievable bandwidth.
-3. Once done with all the measurements, use the `wifi-heatmap` tool to compute a high-resolution heatmap from your recorded data. In case your data turns out to be too coarse, you can always go back to step 2 and delete or move old and also add new measurements at any time.
+2. Use the `wifi-survey` tool to record measurements. You can load a floorplan and click on various locations to record signal strength and determine the achievable bandwidth.
+3. Once all the measurements are complete, use the `wifi-heatmap` tool to compute a high-resolution heatmap from your recorded data. In case your data turns out to be too coarse, you can go back to step 2 and delete or move old measurements and also add new ones at any time.
 
 Installation and Dependencies
 -----------------------------
@@ -45,7 +50,7 @@ Installation and Dependencies
 * `wxPython Phoenix <https://wiki.wxpython.org/How%20to%20install%20wxPython>`_, which unfortunately must be installed using OS packages or built from source.
 * An iperf3 server running on another system on the LAN, as described below is recommended but optional.
 
-Recommended installation is via ``python setup.py develop`` in a virtualenv setup with ``--system-site-packages`` (for the above dependencies).
+If you don't use a Docker container, recommended installation is via ``python setup.py develop`` in a virtualenv setup with ``--system-site-packages`` (for the above dependencies).
 
 Tested with Python 3.7.
 
@@ -61,6 +66,7 @@ At each survey location, data collection should take 45-60 seconds. The data col
 * Scan of all visible access points in the vicinity [optional, enable with `--scan`]
 
 Hints:
+
 - The duration of the bandwidth measurement can be changed using the `--duration` argument of `wifi-survey`. This has great influence on the actual length of the individual data collections.
 - Scanning for other network takes rather long. As this isn't required in most cases, it is not enabled by default
 
@@ -70,14 +76,14 @@ Usage
 Server Setup
 ++++++++++++
 
-On the system you're using as the ``iperf3`` server, run ``iperf3 -s`` to start iperf3 in server mode in the foreground.
-By default it will use TCP and UDP ports 5201 for communication, and these must be open in your firewall (at least from the client machine).
+On the system you're using as the ``iperf3`` server, start iperf3 in server mode in the foreground by running ``iperf3 -s``.
+By default it uses TCP and UDP ports 5201 for communication, and these must be open in your firewall (at least from the client machine).
 Ideally, you should be running the same exact iperf3 version on both machines.
 
 Performing a Survey
 +++++++++++++++++++
 
-The survey tool (``wifi-survey``) only requires root privileges for scans. It can be run via ``sudo`` in which case it will drop back to your user after forking off the scan process, or it will launch the scan process via ``pkexec`` if not started with ``sudo`` (or via Docker; see below).
+The survey tool (``wifi-survey``) only requires root privileges for scans. It can be run via ``sudo`` in which case it drops back to your user after forking off the scan process, or launch the scan process via ``pkexec`` if not started with ``sudo`` (or via Docker; see below).
 
 First connect to the network that you want to survey. Then, run ``sudo wifi-survey`` where:
 
@@ -85,21 +91,21 @@ Command-line options include:
 
 * ``-i INTERFACE`` / ``--interface INTERFACE`` is the name of your Wireless interface (e.g. ``wlp3s0``)
 * ``-p PICTURE`` / ``--picture PICTURE`` is the path to a floorplan PNG file to use as the background for the map; see `examples/example_floorplan.png <examples/example_floorplan.png>`_ for an example. In order to compare multiple surveys it may be helpful to pre-mark your measurement points on the floorplan, like `examples/example_with_marks.png <examples/example_with_marks.png`_. The UI currently loads the PNG at exact size, so it may help to scale your PNG file to your display.
-* ``-t TITLE`` / ``--title TITLE`` is the title for the survey (such as the network name or AP location), which will also be used to name the data file and output files.
+* ``-t TITLE`` / ``--title TITLE`` is the title for the survey (such as the network name or AP location), which is also be used to name the data file and output files.
 * ``-s IPERF3_SERVER`` / ``--server IPERF3_SERVER`` to enable ``iperf3`` scans. The generated speed heatmaps are very useful (much more useful than signal strength) in visualizing the *real* performance of your network as they are live measurements with real data (instead of only theoretical values).
 * ``-S`` / ``--scan`` to enable wireless scaning at the end of each measurement. This may take a lot of time, however, generates data used later for generating channel utilization graphs. If you're using a modern wireless product that allows running RF scans, it makes sense to use that data instead of these scans.
-* ``-b BSSID`` / ``--bssid BSSID`` allows you to specify a single desired BSSID for your survey. This will be checked several times during of every measurement, and the measurement will be discarded if you're connected to the wrong BSSID. This can be useful as a safeguard to make sure you don't accidentally roam to a different AP.
+* ``-b BSSID`` / ``--bssid BSSID`` allows you to specify a single desired BSSID for your survey. This is checked several times during of every measurement, and the measurement is discarded if you're connected to the wrong BSSID. This can be useful as a safeguard to make sure you don't accidentally roam to a different AP.
 * ``-d 123`` / ``--duration 123`` allows you to change the duration of each individual `iperf3` test run (default is 10 seconds as mentioned above)
-* ``--ding FILENAME`` will play the audio file at FILENAME when each measurement point is complete. See `Playing A Sound When Measurement Finishes <#playing-a-sound-when-measurement-finishes>`_ below for details.
+* ``--ding FILENAME`` plays the audio file at FILENAME when each measurement point is complete. See `Playing A Sound When Measurement Finishes <#playing-a-sound-when-measurement-finishes>`_ below for details.
 
-If ``TITLE.json`` already exists, the data from it will be pre-loaded into the application; this can be used to **resume a survey**.
+If ``TITLE.json`` already exists, the data from it is pre-loaded into the application; this can be used to **resume a survey**.
 
 When the UI loads, you should see your PNG file displayed. The UI is really simple:
 
-* If you (left / primary) click on a point on the PNG, this will begin a measurement (survey point). The application should draw a yellow circle there. The status bar at the bottom of the window will show information on each test as it's performed; the full cycle typically takes a minute or a bit more. When the test is complete, the circle should turn green and the status bar will inform you that the data has been written to ``Title.json`` and it's ready for the next measurement. If ``iperf3`` encounters an error, you'll be prompted whether you want to retry or not; if you don't, whatever results iperf was able to obtain will be saved for that point.
-* The output file is (re-)written after each measurement completes, so just exit the app when you're finished (or want to resume later; specifying the same Title will load the existing points and data from JSON).
-* Right (secondary) clicking a point will allow you to delete it. You'll be prompted to confirm.
-* Dragging (left/primary click and hold, then drag) an existing point will allow you to move it. You'll be prompted to confirm. This is handy if you accidentally click in the wrong place.
+* A left-click (primary click) on a point on the PNG, begins a measurement (survey point). The application draws a yellow circle there. The status bar at the bottom of the window shows information on each test as it's performed; the full cycle typically takes a minute or a bit more. When the test is complete, the circle turns green and the status bar indicaates that the data has been written to ``Title.json`` and it's ready for the next measurement. If ``iperf3`` encounters an error, you'll be prompted whether you want to retry or not; if you don't, whatever results iperf was able to obtain are saved for that point.
+* The output file is (re-)written after each measurement completes, so just exit the app when you're finished (or want to resume later; specifying the same Title loads the existing points and data from JSON).
+* Right (secondary) clicking a point allows you to delete it. You'll be prompted to confirm.
+* Dragging (left/primary click and hold, then drag) an existing point allows you to move it. You'll be prompted to confirm. This is handy if you accidentally click in the wrong place.
 
 At the end of the process, you should end up with a JSON file in your current directory named after the title you provided to ``wifi-survey`` (``Title.json``) that's owned by root. Fix the permissions if you want.
 
